@@ -1,23 +1,18 @@
 "use client"
 
-import { useState } from "react"
 import { Button, CircularProgress } from "@mui/material"
 import { RefreshCw } from "lucide-react"
 import { useSigns } from "@/context/signs-context"
 
 export default function RefreshButton() {
-  const { fetchSigns } = useSigns()
-  const [loading, setLoading] = useState(false)
+  const { updateSigns, loading } = useSigns()
 
   // Обработчик обновления данных
   const handleRefresh = async () => {
-    setLoading(true)
     try {
-      await fetchSigns()
+      await updateSigns()
     } catch (error) {
       console.error("Ошибка при обновлении данных:", error)
-    } finally {
-      setLoading(false)
     }
   }
 

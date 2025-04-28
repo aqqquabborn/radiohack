@@ -20,6 +20,7 @@ import {
   TablePagination,
   Tooltip,
   Button,
+  CircularProgress,
 } from "@mui/material"
 import { ChevronDown, ChevronUp, Download, Copy } from "lucide-react"
 import { useSigns } from "@/context/signs-context"
@@ -28,7 +29,7 @@ type Order = "asc" | "desc"
 type OrderBy = "name" | "source" | "status" | "coordinates"
 
 export default function EnhancedSignsTable() {
-  const { signs, filters } = useSigns()
+  const { signs, filters, loading } = useSigns()
   const [order, setOrder] = useState<Order>("asc")
   const [orderBy, setOrderBy] = useState<OrderBy>("name")
   const [expandedRow, setExpandedRow] = useState<number | null>(null)
@@ -47,7 +48,7 @@ export default function EnhancedSignsTable() {
     }
 
     // Фильтр по статусу
-    if (filters.status.length > 0 && !filters.status.includes(sign.mergedStatus)) {
+    if (filters.status.length > 0 && !filters.status.includes(sign.mergedStatus || "")) {
       return false
     }
 
@@ -92,7 +93,7 @@ export default function EnhancedSignsTable() {
   }
 
   // Получение числового значения для сортировки по статусу
-  const getStatusValue = (status: string) => {
+  const getStatusValue = (status: string | null) => {
     switch (status) {
       case "new":
         return 4
@@ -126,7 +127,7 @@ export default function EnhancedSignsTable() {
   }
 
   // Получение цвета чипа статуса
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case "new":
         return "success"
@@ -142,7 +143,7 @@ export default function EnhancedSignsTable() {
   }
 
   // Получение текста статуса на русском
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string | null) => {
     switch (status) {
       case "new":
         return "Новый"
@@ -153,7 +154,7 @@ export default function EnhancedSignsTable() {
       case "removed":
         return "Удален"
       default:
-        return status
+        return "Без статуса"
     }
   }
 
@@ -200,10 +201,18 @@ export default function EnhancedSignsTable() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.setAttribute("href", url)
-    link.setAttribute("download", "dорожные_знаки.csv")
+    link.setAttribute("download", "дорожные_знаки.csv")
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: 300 }}>
+        <CircularProgress />
+      </Box>
+    )
   }
 
   return (
@@ -304,11 +313,17 @@ export default function EnhancedSignsTable() {
                     />
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      size="small"
-                      label={getStatusText(sign.mergedStatus)}
-                      color={getStatusColor(sign.mergedStatus) as any}
-                    />
+                    {sign.mergedStatus ? (
+                      <Chip
+                        size="small"
+                        label={getStatusText(sign.mergedStatus)}
+                        color={getStatusColor(sign.mergedStatus) as any}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Без статуса
+                      </Typography>
+                    )}
                   </TableCell>
                 </TableRow>
                 <TableRow key={`expanded-row-${sign.id}`}>
@@ -325,9 +340,11 @@ export default function EnhancedSignsTable() {
                               Данные ГИБДД:
                             </Typography>
                             <Typography variant="body2">{sign.descriptionGibdd || "Нет описания"}</Typography>
-                            <Typography variant="caption" display="block">
-                              Последнее обновление: {new Date(sign.lastUpdateGibdd).toLocaleDateString()}
-                            </Typography>
+                            {sign.gibdd_unical_id && (
+                              <Typography variant="caption" display="block">
+                                ID ГИБДД: {sign.gibdd_unical_id}
+                              </Typography>
+                            )}
                           </Box>
                         )}
 
@@ -337,9 +354,11 @@ export default function EnhancedSignsTable() {
                               Данные Коммерции:
                             </Typography>
                             <Typography variant="body2">{sign.descriptionCommerce || "Нет описания"}</Typography>
-                            <Typography variant="caption" display="block">
-                              Последнее обновление: {new Date(sign.lastUpdateCommerce).toLocaleDateString()}
-                            </Typography>
+                            {sign.commerce_internal_id && (
+                              <Typography variant="caption" display="block">
+                                ID Коммерции: {sign.commerce_internal_id}
+                              </Typography>
+                            )}
                           </Box>
                         )}
                       </Box>

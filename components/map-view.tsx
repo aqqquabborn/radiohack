@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
-import { Box, Typography, Divider, Chip } from "@mui/material"
+import { Box, Typography, Divider, Chip, CircularProgress } from "@mui/material"
 import { useSigns } from "@/context/signs-context"
 
 // Исправление проблемы с иконками Leaflet в Next.js
@@ -33,7 +33,7 @@ const createCustomIcon = (color: string) => {
 }
 
 export default function MapView() {
-  const { signs, filters } = useSigns()
+  const { signs, filters, loading } = useSigns()
   const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function MapView() {
     }
 
     // Фильтр по статусу
-    if (filters.status.length > 0 && !filters.status.includes(sign.mergedStatus)) {
+    if (filters.status.length > 0 && !filters.status.includes(sign.mergedStatus || "")) {
       return false
     }
 
@@ -92,7 +92,7 @@ export default function MapView() {
   }
 
   // Получение цвета чипа статуса
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case "new":
         return "success"
@@ -108,7 +108,7 @@ export default function MapView() {
   }
 
   // Получение текста статуса на русском
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: string | null) => {
     switch (status) {
       case "new":
         return "Новый"
@@ -119,7 +119,7 @@ export default function MapView() {
       case "removed":
         return "Удален"
       default:
-        return status
+        return "Без статуса"
     }
   }
 
@@ -127,6 +127,14 @@ export default function MapView() {
     return (
       <Box sx={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
         Загрузка карты...
+      </Box>
+    )
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ height: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <CircularProgress />
       </Box>
     )
   }
@@ -158,14 +166,16 @@ export default function MapView() {
                     sign.sourceGibdd && sign.sourceCommerce ? "secondary" : sign.sourceGibdd ? "primary" : "success"
                   }
                 />
-                <Chip
-                  size="small"
-                  label={getStatusText(sign.mergedStatus)}
-                  color={getStatusColor(sign.mergedStatus) as any}
-                />
+                {sign.mergedStatus && (
+                  <Chip
+                    size="small"
+                    label={getStatusText(sign.mergedStatus)}
+                    color={getStatusColor(sign.mergedStatus) as any}
+                  />
+                )}
               </Box>
 
-              {sign.sourceGibdd && (
+              {sign.sourceGibdd && sign.descriptionGibdd && (
                 <>
                   <Typography variant="body2" fontWeight="bold">
                     Данные ГИБДД:
@@ -176,7 +186,7 @@ export default function MapView() {
                 </>
               )}
 
-              {sign.sourceCommerce && (
+              {sign.sourceCommerce && sign.descriptionCommerce && (
                 <>
                   <Typography variant="body2" fontWeight="bold">
                     Данные Коммерции:
@@ -190,12 +200,10 @@ export default function MapView() {
               <Divider sx={{ my: 1 }} />
 
               <Typography variant="caption" display="block">
-                Последнее обновление:{" "}
-                {sign.sourceGibdd && sign.sourceCommerce
-                  ? `ГИБДД: ${new Date(sign.lastUpdateGibdd).toLocaleDateString()}, Коммерция: ${new Date(sign.lastUpdateCommerce).toLocaleDateString()}`
-                  : sign.sourceGibdd
-                    ? new Date(sign.lastUpdateGibdd).toLocaleDateString()
-                    : new Date(sign.lastUpdateCommerce).toLocaleDateString()}
+                {sign.sourceGibdd && sign.gibdd_unical_id && <div>ID ГИБДД: {sign.gibdd_unical_id}</div>}
+                {sign.sourceCommerce && sign.commerce_internal_id && (
+                  <div>ID Коммерции: {sign.commerce_internal_id}</div>
+                )}
               </Typography>
             </Popup>
           </Marker>
